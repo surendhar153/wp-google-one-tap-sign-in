@@ -2,6 +2,7 @@
 
 <dl>
   <dt>Homepage</dt><dd><a href="http://www.github.com/google/google-auth-library-php">http://www.github.com/google/google-auth-library-php</a></dd>
+  <dt>Reference Docs</dt><dd><a href="https://googleapis.github.io/google-auth-library-php/master/">https://googleapis.github.io/google-auth-library-php/master/</a></dd>
   <dt>Authors</dt>
     <dd><a href="mailto:temiola@google.com">Tim Emiola</a></dd>
     <dd><a href="mailto:stanleycheung@google.com">Stanley Cheung</a></dd>
@@ -14,8 +15,6 @@
 
 This is Google's officially supported PHP client library for using OAuth 2.0
 authorization and authentication with Google APIs.
-
-View the [reference documentation][ref-docs].
 
 ### Installing via Composer
 
@@ -173,6 +172,48 @@ For invoking Cloud Identity-Aware Proxy, you will need to pass the Client ID
 used when you set up your protected resource as the target audience. See how to
 [secure your IAP app with signed headers](https://cloud.google.com/iap/docs/signed-headers-howto).
 
+#### Call using a specific JSON key
+If you want to use a specific JSON key instead of using `GOOGLE_APPLICATION_CREDENTIALS` environment variable, you can
+ do this:
+ 
+```php
+use Google\Auth\CredentialsLoader;
+use Google\Auth\Middleware\AuthTokenMiddleware;
+use GuzzleHttp\Client;
+use GuzzleHttp\HandlerStack;
+
+// Define the Google Application Credentials array
+$jsonKey = ['key' => 'value'];
+
+// define the scopes for your API call
+$scopes = ['https://www.googleapis.com/auth/drive.readonly'];
+
+// Load credentials
+$creds = CredentialsLoader::makeCredentials($scopes, $jsonKey);
+
+// optional caching
+// $creds = new FetchAuthTokenCache($creds, $cacheConfig, $cache);
+
+// create middleware
+$middleware = new AuthTokenMiddleware($creds);
+$stack = HandlerStack::create();
+$stack->push($middleware);
+
+// create the HTTP client
+$client = new Client([
+  'handler' => $stack,
+  'base_uri' => 'https://www.googleapis.com',
+  'auth' => 'google_auth'  // authorize all requests
+]);
+
+// make the request
+$response = $client->get('drive/v2/files');
+
+// show the result!
+print_r((string) $response->getBody());
+
+```
+
 #### Verifying JWTs
 
 If you are [using Google ID tokens to authenticate users][google-id-tokens], use
@@ -219,7 +260,6 @@ hesitate to
 [ask questions](http://stackoverflow.com/questions/tagged/google-auth-library-php)
 about the client or APIs on [StackOverflow](http://stackoverflow.com).
 
-[ref-docs]: https://googleapis.github.io/google-auth-library-php/master/
 [google-apis-php-client]: https://github.com/google/google-api-php-client
 [application default credentials]: https://developers.google.com/accounts/docs/application-default-credentials
 [contributing]: https://github.com/google/google-auth-library-php/tree/master/.github/CONTRIBUTING.md
